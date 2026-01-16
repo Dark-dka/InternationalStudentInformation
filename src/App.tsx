@@ -2,7 +2,6 @@ import React from 'react';
 import { Box, Container, Toolbar } from '@mui/material';
 import { Sidebar } from './layout/Sidebar';
 import { Topbar } from './layout/Topbar';
-import { students as mockStudents } from './mockData';
 import { Student } from './types';
 import { StatCards } from './components/StatCards';
 import { StudentTable } from './components/StudentTable';
@@ -10,91 +9,109 @@ import { AlertsPanel } from './components/AlertsPanel';
 import { StudentProfileModal } from './components/StudentProfileModal';
 import { Login } from './components/Login';
 import { calculateDormitoryBalance, calculateRemaining } from './utils';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { PageContent } from './components/PageContent';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { getSidebarWidth } from './routes';
+import { apiService } from './services/api';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(() => {
-    return localStorage.getItem('isAuthenticated') === 'true';
+    return !!localStorage.getItem('access_token');
   });
   const [loginError, setLoginError] = React.useState<string>('');
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const [search, setSearch] = React.useState('');
-  const [students, setStudents] = React.useState<Student[]>(mockStudents);
+  const [students, setStudents] = React.useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(
     null
   );
+  const [loading, setLoading] = React.useState(false);
+  const [stats, setStats] = React.useState({
+    totalStudents: 0,
+    fullyPaid: 0,
+    expiringRegistration: 0,
+    dormitoryResidents: 0,
+  });
 
-  const handleLogin = (username: string, password: string) => {
-    if (username === 'admin' && password === 'admin') {
-      setIsAuthenticated(true);
-      localStorage.setItem('isAuthenticated', 'true');
+  const loadStudents = async () => {
+    try {
+      setLoading(true);
+      const data = await apiService.getStudents(search || undefined);
+      setStudents(data);
+    } catch (error) {
+      console.error('Error loading students:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const data = await apiService.getStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  // Load students from API on mount and when authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      loadStudents();
+      loadStats();
+    }
+  }, [isAuthenticated]);
+
+  // Load students when search changes (with debounce)
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      const timeoutId = setTimeout(() => {
+        loadStudents();
+      }, 300); // Debounce search
+      return () => clearTimeout(timeoutId);
+    }
+  }, [search, isAuthenticated]);
+
+  const handleLogin = async (username: string, password: string) => {
+    try {
       setLoginError('');
-    } else {
-      setLoginError('Noto\'g\'ri foydalanuvchi nomi yoki parol');
+      await apiService.login(username, password);
+      setIsAuthenticated(true);
+      await loadStudents();
+      await loadStats();
+    } catch (error: any) {
+      setLoginError(error.message || 'Noto\'g\'ri foydalanuvchi nomi yoki parol');
     }
   };
 
   const handleLogout = () => {
+    apiService.logout();
     setIsAuthenticated(false);
-    localStorage.removeItem('isAuthenticated');
+    setStudents([]);
   };
 
-  const handleSaveStudent = (student: Student) => {
-    if (student.id && students.find(s => s.id === student.id)) {
-      // Update existing student
-      setStudents(prev => prev.map(s => s.id === student.id ? student : s));
-    } else {
-      // Add new student - generate ID based on highest existing ID
-      const existingIds = students.map(s => {
-        const match = s.id.match(/STU-(\d+)/);
-        return match ? parseInt(match[1], 10) : 0;
-      });
-      const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
-      const newId = `STU-${String(maxId + 1).padStart(3, '0')}`;
-      setStudents(prev => [...prev, { ...student, id: newId }]);
+  const handleSaveStudent = async (student: Student) => {
+    try {
+      setLoading(true);
+      if (student.id && students.find(s => s.id === student.id)) {
+        // Update existing student
+        await apiService.updateStudent(student.id, student);
+        await loadStudents();
+        await loadStats();
+      } else {
+        // Add new student
+        await apiService.createStudent(student);
+        await loadStudents();
+        await loadStats();
+      }
+      setSelectedStudent(null);
+    } catch (error: any) {
+      console.error('Error saving student:', error);
+      alert(error.message || 'Talabani saqlashda xatolik yuz berdi');
+    } finally {
+      setLoading(false);
     }
-    setSelectedStudent(null);
   };
-
-  const filteredStudents = React.useMemo(() => {
-    if (!search.trim()) return students;
-    const s = search.toLowerCase();
-    return students.filter(st =>
-      [
-        st.fullName,
-        st.id,
-        st.academic.group,
-        st.academic.major,
-        st.citizenship
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(s)
-    );
-  }, [search, students]);
-
-  const fullyPaidCount = students.filter(st => {
-    const tuitionRemaining = calculateRemaining(st.tuition);
-    const registrationRemaining = calculateRemaining(st.registrationFee);
-    const dormitoryBalance = calculateDormitoryBalance(st.dormitory);
-    return (
-      tuitionRemaining === 0 &&
-      registrationRemaining === 0 &&
-      dormitoryBalance.balance <= 0
-    );
-  }).length;
-
-  const expiringRegistrationCount = students.filter(st => {
-    const regEnd = new Date(st.visa.registrationEndDate);
-    const diffMs = regEnd.getTime() - Date.now();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    return diffDays <= 10;
-  }).length;
-
-  const dormitoryResidentsCount = students.filter(
-    st => st.dormitory.status !== 'None'
-  ).length;
 
   const sidebarWidth = getSidebarWidth(sidebarOpen);
 
@@ -104,125 +121,168 @@ const App: React.FC = () => {
 
   return (
     <BrowserRouter>
-      <Box
-        sx={{
-          display: 'flex',
-          minHeight: '100vh',
-          backgroundColor: 'background.default'
-        }}
-      >
-        <Sidebar
-          open={sidebarOpen}
-          onToggle={() => setSidebarOpen(prev => !prev)}
-        />
-        <Box sx={{ flexGrow: 1 }}>
-          <Topbar
-            search={search}
-            onSearchChange={setSearch}
-            sidebarWidth={sidebarWidth}
-            onLogout={handleLogout}
-          />
-          <Toolbar />
-          <Container maxWidth="xl" sx={{ py: 3 }}>
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <StatCards
-                      totalStudents={students.length}
-                      fullyPaid={fullyPaidCount}
-                      expiringRegistration={expiringRegistrationCount}
-                      dormitoryResidents={dormitoryResidentsCount}
-                    />
-                    <AlertsPanel students={students} />
-                    <StudentTable
-                      students={filteredStudents}
-                      onSelectStudent={setSelectedStudent}
-                      onEditStudent={(student) => setSelectedStudent(student)}
-                      onAddStudent={() => setSelectedStudent(null)}
-                      onSaveStudent={handleSaveStudent}
-                    />
-                  </Box>
-                }
-              />
-              <Route
-                path="/talabalar"
-                element={
-                  <StudentTable
-                    students={filteredStudents}
-                    onSelectStudent={setSelectedStudent}
-                    onEditStudent={(student) => setSelectedStudent(student)}
-                    onAddStudent={() => setSelectedStudent(null)}
-                    onSaveStudent={handleSaveStudent}
-                  />
-                }
-              />
-              <Route
-                path="/akademik"
-                element={
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <AlertsPanel students={students} />
-                    <StudentTable
-                      students={filteredStudents}
-                      onSelectStudent={setSelectedStudent}
-                      onEditStudent={(student) => setSelectedStudent(student)}
-                      onAddStudent={() => setSelectedStudent(null)}
-                      onSaveStudent={handleSaveStudent}
-                    />
-                  </Box>
-                }
-              />
-              <Route
-                path="/viza"
-                element={
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <AlertsPanel students={students} />
-                    <StudentTable
-                      students={filteredStudents}
-                      onSelectStudent={setSelectedStudent}
-                      onEditStudent={(student) => setSelectedStudent(student)}
-                      onAddStudent={() => setSelectedStudent(null)}
-                      onSaveStudent={handleSaveStudent}
-                    />
-                  </Box>
-                }
-              />
-              <Route
-                path="/tolovlar"
-                element={
-                  <StudentTable
-                    students={filteredStudents}
-                    onSelectStudent={setSelectedStudent}
-                    onEditStudent={(student) => setSelectedStudent(student)}
-                    onAddStudent={() => setSelectedStudent(null)}
-                    onSaveStudent={handleSaveStudent}
-                  />
-                }
-              />
-              <Route
-                path="/yotoqxona"
-                element={
-                  <StudentTable
-                    students={filteredStudents}
-                    onSelectStudent={setSelectedStudent}
-                    onEditStudent={(student) => setSelectedStudent(student)}
-                    onAddStudent={() => setSelectedStudent(null)}
-                    onSaveStudent={handleSaveStudent}
-                  />
-                }
-              />
-              <Route path="/ogohlantirishlar" element={<AlertsPanel students={students} />} />
-            </Routes>
-          </Container>
-        </Box>
-        <StudentProfileModal
-          open={!!selectedStudent}
-          student={selectedStudent}
-          onClose={() => setSelectedStudent(null)}
-        />
-      </Box>
+      <AppContent
+        students={students}
+        stats={stats}
+        search={search}
+        setSearch={setSearch}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        sidebarWidth={sidebarWidth}
+        onLogout={handleLogout}
+        selectedStudent={selectedStudent}
+        setSelectedStudent={setSelectedStudent}
+        onSaveStudent={handleSaveStudent}
+      />
     </BrowserRouter>
+  );
+};
+
+const AppContent: React.FC<{
+  students: Student[];
+  stats: any;
+  search: string;
+  setSearch: (s: string) => void;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  sidebarWidth: number;
+  onLogout: () => void;
+  selectedStudent: Student | null;
+  setSelectedStudent: (s: Student | null) => void;
+  onSaveStudent: (s: Student) => void;
+}> = ({
+  students,
+  stats,
+  search,
+  setSearch,
+  sidebarOpen,
+  setSidebarOpen,
+  sidebarWidth,
+  onLogout,
+  selectedStudent,
+  setSelectedStudent,
+  onSaveStudent,
+}) => {
+  const location = useLocation();
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        backgroundColor: 'background.default'
+      }}
+    >
+      <Sidebar
+        open={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
+      <Box sx={{ flexGrow: 1 }}>
+        <Topbar
+          search={search}
+          onSearchChange={setSearch}
+          sidebarWidth={sidebarWidth}
+          onLogout={onLogout}
+        />
+        <Toolbar />
+        <Container maxWidth="xl" sx={{ py: 3 }}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <StatCards
+                    totalStudents={stats.totalStudents}
+                    fullyPaid={stats.fullyPaid}
+                    expiringRegistration={stats.expiringRegistration}
+                    dormitoryResidents={stats.dormitoryResidents}
+                  />
+                  <PageContent
+                    students={students}
+                    pathname={location.pathname}
+                    onSelectStudent={setSelectedStudent}
+                    onEditStudent={setSelectedStudent}
+                    onAddStudent={() => setSelectedStudent(null)}
+                    onSaveStudent={onSaveStudent}
+                  />
+                </Box>
+              }
+            />
+            <Route
+              path="/talabalar"
+              element={
+                <PageContent
+                  students={students}
+                  pathname={location.pathname}
+                  onSelectStudent={setSelectedStudent}
+                  onEditStudent={setSelectedStudent}
+                  onAddStudent={() => setSelectedStudent(null)}
+                  onSaveStudent={onSaveStudent}
+                />
+              }
+            />
+            <Route
+              path="/akademik"
+              element={
+                <PageContent
+                  students={students}
+                  pathname={location.pathname}
+                  onSelectStudent={setSelectedStudent}
+                  onEditStudent={setSelectedStudent}
+                  onAddStudent={() => setSelectedStudent(null)}
+                  onSaveStudent={onSaveStudent}
+                />
+              }
+            />
+            <Route
+              path="/viza"
+              element={
+                <PageContent
+                  students={students}
+                  pathname={location.pathname}
+                  onSelectStudent={setSelectedStudent}
+                  onEditStudent={setSelectedStudent}
+                  onAddStudent={() => setSelectedStudent(null)}
+                  onSaveStudent={onSaveStudent}
+                />
+              }
+            />
+            <Route
+              path="/tolovlar"
+              element={
+                <PageContent
+                  students={students}
+                  pathname={location.pathname}
+                  onSelectStudent={setSelectedStudent}
+                  onEditStudent={setSelectedStudent}
+                  onAddStudent={() => setSelectedStudent(null)}
+                  onSaveStudent={onSaveStudent}
+                />
+              }
+            />
+            <Route
+              path="/yotoqxona"
+              element={
+                <PageContent
+                  students={students}
+                  pathname={location.pathname}
+                  onSelectStudent={setSelectedStudent}
+                  onEditStudent={setSelectedStudent}
+                  onAddStudent={() => setSelectedStudent(null)}
+                  onSaveStudent={onSaveStudent}
+                />
+              }
+            />
+            <Route path="/ogohlantirishlar" element={<AlertsPanel students={students} />} />
+          </Routes>
+        </Container>
+      </Box>
+      <StudentProfileModal
+        open={!!selectedStudent}
+        student={selectedStudent}
+        onClose={() => setSelectedStudent(null)}
+      />
+    </Box>
   );
 };
 
