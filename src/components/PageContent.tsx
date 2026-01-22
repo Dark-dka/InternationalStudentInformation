@@ -62,7 +62,7 @@ export const PageContent: React.FC<PageContentProps> = ({
       case '/akademik':
         return 'Akademik ma\'lumotlar';
       case '/viza':
-        return 'Viza va ro\'yxatdan o'tish';
+        return 'Viza va ro\'yxatdan o\'tish';
       case '/tolovlar':
         return 'To\'lovlar (Qarzdor talabalar)';
       case '/yotoqxona':
