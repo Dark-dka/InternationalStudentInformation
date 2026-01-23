@@ -160,6 +160,16 @@ class ApiService {
   }> {
     return this.request('/students/stats/');
   }
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/auth/change-password/', {
+      method: 'POST',
+      body: JSON.stringify({
+        currentPassword,
+        newPassword,
+      }),
+    });
+  }
 }
 
 export const apiService = new ApiService();

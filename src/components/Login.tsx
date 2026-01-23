@@ -86,12 +86,12 @@ export const Login: React.FC<LoginProps> = ({ onLogin, error }) => {
               Kirish
             </Button>
           </Box>
-
+{/* 
           <Box sx={{ mt: 2, textAlign: 'center' }}>
             <Typography variant="caption" color="text.secondary">
               Demo: username: admin, password: admin
             </Typography>
-          </Box>
+          </Box> */}
         </Paper>
       </Box>
     </Container>

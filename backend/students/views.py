@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from .models import Student
 from .serializers import StudentSerializer
@@ -39,6 +41,46 @@ def custom_login(request):
             'id': user.id,
             'username': user.username
         }
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """Change password endpoint"""
+    current_password = request.data.get('currentPassword')
+    new_password = request.data.get('newPassword')
+    
+    if not current_password or not new_password:
+        return Response(
+            {'error': 'Joriy parol va yangi parol kiritilishi shart'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    user = request.user
+    
+    # Check current password
+    if not user.check_password(current_password):
+        return Response(
+            {'error': 'Joriy parol noto\'g\'ri'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Validate new password
+    try:
+        validate_password(new_password, user)
+    except ValidationError as e:
+        return Response(
+            {'error': '; '.join(e.messages)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Set new password
+    user.set_password(new_password)
+    user.save()
+    
+    return Response({
+        'message': 'Parol muvaffaqiyatli o\'zgartirildi'
     })
 
 

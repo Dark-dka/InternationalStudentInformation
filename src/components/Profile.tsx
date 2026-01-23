@@ -16,6 +16,7 @@ import {
 import PersonIcon from '@mui/icons-material/Person';
 import LockIcon from '@mui/icons-material/Lock';
 import SaveIcon from '@mui/icons-material/Save';
+import { apiService } from '../services/api';
 
 export const Profile: React.FC = () => {
     const [currentPassword, setCurrentPassword] = React.useState('');
@@ -48,8 +49,7 @@ export const Profile: React.FC = () => {
         }
 
         try {
-            // TODO: Implement API call to change password
-            // await apiService.changePassword(currentPassword, newPassword);
+            await apiService.changePassword(currentPassword, newPassword);
 
             setSuccess('Parol muvaffaqiyatli o\'zgartirildi');
             setShowSnackbar(true);
