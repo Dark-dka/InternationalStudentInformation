@@ -8,6 +8,8 @@ import { StudentTable } from './components/StudentTable';
 import { AlertsPanel } from './components/AlertsPanel';
 import { StudentProfileModal } from './components/StudentProfileModal';
 import { Login } from './components/Login';
+import { Profile } from './components/Profile';
+import { Settings } from './components/Settings';
 import { calculateDormitoryBalance, calculateRemaining } from './utils';
 import { PageContent } from './components/PageContent';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -163,40 +165,54 @@ const AppContent: React.FC<{
   setSelectedStudent,
   onSaveStudent,
 }) => {
-  const location = useLocation();
+    const location = useLocation();
 
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        minHeight: '100vh',
-        backgroundColor: 'background.default'
-      }}
-    >
-      <Sidebar
-        open={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
-      <Box sx={{ flexGrow: 1 }}>
-        <Topbar
-          search={search}
-          onSearchChange={setSearch}
-          sidebarWidth={sidebarWidth}
-          onLogout={onLogout}
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          minHeight: '100vh',
+          backgroundColor: 'background.default'
+        }}
+      >
+        <Sidebar
+          open={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
         />
-        <Toolbar />
-        <Container maxWidth="xl" sx={{ py: 3 }}>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <StatCards
-                    totalStudents={stats.totalStudents}
-                    fullyPaid={stats.fullyPaid}
-                    expiringRegistration={stats.expiringRegistration}
-                    dormitoryResidents={stats.dormitoryResidents}
-                  />
+        <Box sx={{ flexGrow: 1 }}>
+          <Topbar
+            search={search}
+            onSearchChange={setSearch}
+            sidebarWidth={sidebarWidth}
+            onLogout={onLogout}
+          />
+          <Toolbar />
+          <Container maxWidth="xl" sx={{ py: 3 }}>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <StatCards
+                      totalStudents={stats.totalStudents}
+                      fullyPaid={stats.fullyPaid}
+                      expiringRegistration={stats.expiringRegistration}
+                      dormitoryResidents={stats.dormitoryResidents}
+                    />
+                    <PageContent
+                      students={students}
+                      pathname={location.pathname}
+                      onSelectStudent={setSelectedStudent}
+                      onEditStudent={setSelectedStudent}
+                      onAddStudent={() => setSelectedStudent(null)}
+                      onSaveStudent={onSaveStudent}
+                    />
+                  </Box>
+                }
+              />
+              <Route
+                path="/talabalar"
+                element={
                   <PageContent
                     students={students}
                     pathname={location.pathname}
@@ -205,86 +221,74 @@ const AppContent: React.FC<{
                     onAddStudent={() => setSelectedStudent(null)}
                     onSaveStudent={onSaveStudent}
                   />
-                </Box>
-              }
-            />
-            <Route
-              path="/talabalar"
-              element={
-                <PageContent
-                  students={students}
-                  pathname={location.pathname}
-                  onSelectStudent={setSelectedStudent}
-                  onEditStudent={setSelectedStudent}
-                  onAddStudent={() => setSelectedStudent(null)}
-                  onSaveStudent={onSaveStudent}
-                />
-              }
-            />
-            <Route
-              path="/akademik"
-              element={
-                <PageContent
-                  students={students}
-                  pathname={location.pathname}
-                  onSelectStudent={setSelectedStudent}
-                  onEditStudent={setSelectedStudent}
-                  onAddStudent={() => setSelectedStudent(null)}
-                  onSaveStudent={onSaveStudent}
-                />
-              }
-            />
-            <Route
-              path="/viza"
-              element={
-                <PageContent
-                  students={students}
-                  pathname={location.pathname}
-                  onSelectStudent={setSelectedStudent}
-                  onEditStudent={setSelectedStudent}
-                  onAddStudent={() => setSelectedStudent(null)}
-                  onSaveStudent={onSaveStudent}
-                />
-              }
-            />
-            <Route
-              path="/tolovlar"
-              element={
-                <PageContent
-                  students={students}
-                  pathname={location.pathname}
-                  onSelectStudent={setSelectedStudent}
-                  onEditStudent={setSelectedStudent}
-                  onAddStudent={() => setSelectedStudent(null)}
-                  onSaveStudent={onSaveStudent}
-                />
-              }
-            />
-            <Route
-              path="/yotoqxona"
-              element={
-                <PageContent
-                  students={students}
-                  pathname={location.pathname}
-                  onSelectStudent={setSelectedStudent}
-                  onEditStudent={setSelectedStudent}
-                  onAddStudent={() => setSelectedStudent(null)}
-                  onSaveStudent={onSaveStudent}
-                />
-              }
-            />
-            <Route path="/ogohlantirishlar" element={<AlertsPanel students={students} />} />
-          </Routes>
-        </Container>
+                }
+              />
+              <Route
+                path="/akademik"
+                element={
+                  <PageContent
+                    students={students}
+                    pathname={location.pathname}
+                    onSelectStudent={setSelectedStudent}
+                    onEditStudent={setSelectedStudent}
+                    onAddStudent={() => setSelectedStudent(null)}
+                    onSaveStudent={onSaveStudent}
+                  />
+                }
+              />
+              <Route
+                path="/viza"
+                element={
+                  <PageContent
+                    students={students}
+                    pathname={location.pathname}
+                    onSelectStudent={setSelectedStudent}
+                    onEditStudent={setSelectedStudent}
+                    onAddStudent={() => setSelectedStudent(null)}
+                    onSaveStudent={onSaveStudent}
+                  />
+                }
+              />
+              <Route
+                path="/tolovlar"
+                element={
+                  <PageContent
+                    students={students}
+                    pathname={location.pathname}
+                    onSelectStudent={setSelectedStudent}
+                    onEditStudent={setSelectedStudent}
+                    onAddStudent={() => setSelectedStudent(null)}
+                    onSaveStudent={onSaveStudent}
+                  />
+                }
+              />
+              <Route
+                path="/yotoqxona"
+                element={
+                  <PageContent
+                    students={students}
+                    pathname={location.pathname}
+                    onSelectStudent={setSelectedStudent}
+                    onEditStudent={setSelectedStudent}
+                    onAddStudent={() => setSelectedStudent(null)}
+                    onSaveStudent={onSaveStudent}
+                  />
+                }
+              />
+              <Route path="/ogohlantirishlar" element={<AlertsPanel students={students} />} />
+              <Route path="/profil" element={<Profile />} />
+              <Route path="/sozlamalar" element={<Settings />} />
+            </Routes>
+          </Container>
+        </Box>
+        <StudentProfileModal
+          open={!!selectedStudent}
+          student={selectedStudent}
+          onClose={() => setSelectedStudent(null)}
+        />
       </Box>
-      <StudentProfileModal
-        open={!!selectedStudent}
-        student={selectedStudent}
-        onClose={() => setSelectedStudent(null)}
-      />
-    </Box>
-  );
-};
+    );
+  };
 
 export default App;
 

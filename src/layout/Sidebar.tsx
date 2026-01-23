@@ -18,6 +18,8 @@ import BedroomChildIcon from '@mui/icons-material/BedroomChild';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import MenuIcon from '@mui/icons-material/Menu';
+import PersonIcon from '@mui/icons-material/Person';
+import SettingsIcon from '@mui/icons-material/Settings';
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { routes, AppRouteKey } from '../routes';
@@ -31,7 +33,9 @@ const iconByKey: Record<AppRouteKey, React.ReactNode> = {
   visa: <AssignmentIndIcon />,
   payments: <PaymentsIcon />,
   dormitory: <BedroomChildIcon />,
-  alerts: <NotificationsActiveIcon />
+  alerts: <NotificationsActiveIcon />,
+  profile: <PersonIcon />,
+  settings: <SettingsIcon />
 };
 
 interface SidebarProps {
@@ -95,44 +99,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
             (item.path === '/' && location.pathname === '/') ||
             (item.path !== '/' && location.pathname.startsWith(item.path));
           return (
-          <ListItemButton
-            key={item.key}
-            selected={isSelected}
-            component={NavLink}
-            to={item.path}
-            sx={{
-              mx: 1.5,
-              mb: 0.5,
-              borderRadius: 2,
-              '&.Mui-selected': {
-                backgroundColor: 'rgba(230,0,0,0.06)',
-                '& .MuiListItemIcon-root': {
-                  color: 'primary.main'
-                },
-                '& .MuiListItemText-primary': {
-                  fontWeight: 600
-                }
-              },
-              '&:hover': {
-                backgroundColor: 'rgba(15,23,42,0.03)'
-              }
-            }}
-          >
-            <ListItemIcon
+            <ListItemButton
+              key={item.key}
+              selected={isSelected}
+              component={NavLink}
+              to={item.path}
               sx={{
-                color: 'text.secondary',
-                minWidth: open ? 40 : 32
+                mx: 1.5,
+                mb: 0.5,
+                borderRadius: 2,
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(230,0,0,0.06)',
+                  '& .MuiListItemIcon-root': {
+                    color: 'primary.main'
+                  },
+                  '& .MuiListItemText-primary': {
+                    fontWeight: 600
+                  }
+                },
+                '&:hover': {
+                  backgroundColor: 'rgba(15,23,42,0.03)'
+                }
               }}
             >
-              {iconByKey[item.key]}
-            </ListItemIcon>
-            {open && (
-              <ListItemText
-                primary={item.label}
-                primaryTypographyProps={{ fontSize: 14 }}
-              />
-            )}
-          </ListItemButton>
+              <ListItemIcon
+                sx={{
+                  color: 'text.secondary',
+                  minWidth: open ? 40 : 32
+                }}
+              >
+                {iconByKey[item.key]}
+              </ListItemIcon>
+              {open && (
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{ fontSize: 14 }}
+                />
+              )}
+            </ListItemButton>
           );
         })}
       </List>

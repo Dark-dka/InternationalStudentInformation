@@ -7,7 +7,9 @@ export type AppRouteKey =
   | 'visa'
   | 'payments'
   | 'dormitory'
-  | 'alerts';
+  | 'alerts'
+  | 'profile'
+  | 'settings';
 
 export const routes: { key: AppRouteKey; path: string; label: string }[] = [
   { key: 'dashboard', path: '/', label: 'Asosiy panel' },
@@ -16,7 +18,9 @@ export const routes: { key: AppRouteKey; path: string; label: string }[] = [
   { key: 'visa', path: '/viza', label: 'Viza va roʻyxatga olish' },
   { key: 'payments', path: '/tolovlar', label: 'Toʻlovlar' },
   { key: 'dormitory', path: '/yotoqxona', label: 'Yotoqxona' },
-  { key: 'alerts', path: '/ogohlantirishlar', label: 'Ogohlantirishlar' }
+  { key: 'alerts', path: '/ogohlantirishlar', label: 'Ogohlantirishlar' },
+  { key: 'profile', path: '/profil', label: 'Profil' },
+  { key: 'settings', path: '/sozlamalar', label: 'Sozlamalar' }
 ];
 
 export function getSidebarWidth(open: boolean): number {

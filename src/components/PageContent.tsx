@@ -75,6 +75,22 @@ export const PageContent: React.FC<PageContentProps> = ({
   const pageTitle = getPageTitle();
   const showAlerts = pathname === '/' || pathname === '/akademik' || pathname === '/viza';
 
+  // Determine view mode based on pathname
+  const getViewMode = (): 'default' | 'academic' | 'visa' | 'payments' | 'dormitory' => {
+    switch (pathname) {
+      case '/akademik':
+        return 'academic';
+      case '/viza':
+        return 'visa';
+      case '/tolovlar':
+        return 'payments';
+      case '/yotoqxona':
+        return 'dormitory';
+      default:
+        return 'default';
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {pageTitle && (
@@ -98,6 +114,7 @@ export const PageContent: React.FC<PageContentProps> = ({
         onEditStudent={onEditStudent}
         onAddStudent={onAddStudent}
         onSaveStudent={onSaveStudent}
+        viewMode={getViewMode()}
       />
     </Box>
   );
