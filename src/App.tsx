@@ -39,9 +39,16 @@ const App: React.FC = () => {
     try {
       setLoading(true);
       const data = await apiService.getStudents(search || undefined);
-      setStudents(data);
+      // Ensure data is an array
+      if (Array.isArray(data)) {
+        setStudents(data);
+      } else {
+        console.error('API returned non-array data:', data);
+        setStudents([]);
+      }
     } catch (error) {
       console.error('Error loading students:', error);
+      setStudents([]);
     } finally {
       setLoading(false);
     }

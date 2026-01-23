@@ -42,6 +42,9 @@ export const StudentTable: React.FC<StudentTableProps> = ({
   onSaveStudent,
   viewMode = 'default'
 }) => {
+  // Ensure students is an array
+  const studentsArray = Array.isArray(students) ? students : [];
+  
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [formOpen, setFormOpen] = React.useState(false);
@@ -85,7 +88,7 @@ export const StudentTable: React.FC<StudentTableProps> = ({
     setPage(0);
   };
 
-  const slice = students.slice(
+  const slice = studentsArray.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
@@ -409,7 +412,7 @@ export const StudentTable: React.FC<StudentTableProps> = ({
         </TableContainer>
         <TablePagination
           component="div"
-          count={students.length}
+          count={studentsArray.length}
           page={page}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}

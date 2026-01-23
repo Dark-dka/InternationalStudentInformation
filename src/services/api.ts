@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 interface LoginResponse {
   access: string;
@@ -34,9 +34,9 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const token = this.getToken();
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string> || {}),
     };
 
     if (token) {
@@ -65,10 +65,14 @@ class ApiService {
             localStorage.setItem('refresh_token', data.refresh);
             
             // Retry original request
-            headers['Authorization'] = `Bearer ${data.access}`;
+            const retryHeaders: Record<string, string> = {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${data.access}`,
+              ...(options.headers as Record<string, string> || {}),
+            };
             const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
               ...options,
-              headers,
+              headers: retryHeaders,
             });
             
             if (!retryResponse.ok) {
@@ -119,7 +123,9 @@ class ApiService {
 
   async getStudents(search?: string): Promise<any[]> {
     const query = search ? `?search=${encodeURIComponent(search)}` : '';
-    return this.request<any[]>(`/students${query}`);
+    const data = await this.request<any>(`/students${query}`);
+    // Ensure we return an array
+    return Array.isArray(data) ? data : (data?.results || []);
   }
 
   async getStudent(id: string): Promise<any> {

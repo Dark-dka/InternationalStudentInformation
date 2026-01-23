@@ -22,16 +22,19 @@ interface AlertsPanelProps {
 }
 
 export const AlertsPanel: React.FC<AlertsPanelProps> = ({ students }) => {
-  const registrationExpiring = students.filter(
+  // Ensure students is an array
+  const studentsArray = Array.isArray(students) ? students : [];
+  
+  const registrationExpiring = studentsArray.filter(
     s => calculateRegistrationDaysLeft(s) <= 10
   );
 
-  const sortedByRegistration = [...students].sort(
+  const sortedByRegistration = [...studentsArray].sort(
     (a, b) =>
       calculateRegistrationDaysLeft(a) - calculateRegistrationDaysLeft(b)
   );
 
-  const debtors = students.filter(s => {
+  const debtors = studentsArray.filter(s => {
     const tuitionRemaining = calculateRemaining(s.tuition);
     const registrationRemaining = calculateRemaining(s.registrationFee);
     const dormitoryBalance = calculateDormitoryBalance(s.dormitory);

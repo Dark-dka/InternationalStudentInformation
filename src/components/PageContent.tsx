@@ -23,19 +23,22 @@ export const PageContent: React.FC<PageContentProps> = ({
   onSaveStudent,
 }) => {
   const getFilteredStudents = (): Student[] => {
+    // Ensure students is an array
+    const studentsArray = Array.isArray(students) ? students : [];
+    
     switch (pathname) {
       case '/akademik':
         // Akademik sahifa - barcha talabalar (akademik ma'lumotlar bilan)
-        return students.filter(s => s.academic);
+        return studentsArray.filter(s => s.academic);
 
       case '/viza':
         // Viza sahifa - barcha talabalar (viza ma'lumotlari bilan)
         // Muammo bo'lganlar alohida belgilanadi
-        return students.filter(s => s.visa);
+        return studentsArray.filter(s => s.visa);
 
       case '/tolovlar':
         // To'lovlar sahifa - qarzdor talabalar
-        return students.filter(s => {
+        return studentsArray.filter(s => {
           const tuitionRemaining = calculateRemaining(s.tuition);
           const registrationRemaining = calculateRemaining(s.registrationFee);
           const dormitoryBalance = calculateDormitoryBalance(s.dormitory);
@@ -44,13 +47,13 @@ export const PageContent: React.FC<PageContentProps> = ({
 
       case '/yotoqxona':
         // Yotoqxona sahifa - yotoqxonada yashaydigan talabalar
-        return students.filter(s => s.dormitory && s.dormitory.status !== 'None');
+        return studentsArray.filter(s => s.dormitory && s.dormitory.status !== 'None');
 
       case '/talabalar':
       case '/':
       default:
         // Barcha talabalar
-        return students;
+        return studentsArray;
     }
   };
 

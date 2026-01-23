@@ -73,15 +73,15 @@ npm install
 
 2. Development serverini ishga tushirish:
 ```bash
-npm run dev
+npm start
 ```
 
-Frontend `http://localhost:5173` da ishga tushadi.
+Frontend `http://localhost:3000` da ishga tushadi.
 
 ## Foydalanish
 
 1. Backend va frontend serverlarini ishga tushiring
-2. Brauzerda `http://localhost:5173` ga kiring
+2. Brauzerda `http://localhost:3000` ga kiring
 3. Tizimga kirish:
    - Username: `admin`
    - Password: `admin`
@@ -105,7 +105,7 @@ Frontend `http://localhost:5173` da ishga tushadi.
 - React 18
 - TypeScript
 - Material-UI (MUI)
-- Vite
+- Create React App (react-scripts)
 - React Router
 
 ### Backend
@@ -120,8 +120,10 @@ Frontend `http://localhost:5173` da ishga tushadi.
 
 Frontend uchun `.env` fayl yaratish (ixtiyoriy):
 ```
-VITE_API_URL=http://localhost:8000/api
+REACT_APP_API_URL=http://localhost:8000/api
 ```
+
+**Eslatma:** `REACT_APP_` prefiksi majburiy!
 
 ## Muammolar va Yechimlar
 
