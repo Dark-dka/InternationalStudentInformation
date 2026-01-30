@@ -10,10 +10,13 @@ import {
   Box,
   IconButton,
   Typography,
-  MenuItem
+  MenuItem,
+  Autocomplete
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { Student, LanguageOfStudy, DormitoryStatus } from '../types';
+import { COUNTRIES } from '../constants/countries';
+import { MAJORS } from '../constants/majors';
 
 interface StudentFormProps {
   open: boolean;
@@ -22,13 +25,56 @@ interface StudentFormProps {
   onSave: (student: Student) => void;
 }
 
+interface FormState {
+  fullName?: string;
+  dateOfBirth?: string;
+  passportNumber?: string;
+  jshir?: string;
+  citizenship?: string;
+  phone?: string;
+  email?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  academic?: {
+    group?: string;
+    courseYear?: number | undefined;
+    major?: string;
+    language?: LanguageOfStudy;
+  };
+  visa?: {
+    visaType?: string;
+    visaStartDate?: string;
+    visaEndDate?: string;
+    registrationStartDate?: string;
+    registrationEndDate?: string;
+    registrationAddressType?: 'Dormitory' | 'Other';
+    registrationAddressDetails?: string;
+  };
+  tuition?: {
+    total?: number | undefined;
+    paid?: number | undefined;
+  };
+  registrationFee?: {
+    total?: number | undefined;
+    paid?: number | undefined;
+  };
+  dormitory?: {
+    status?: DormitoryStatus;
+    checkInDate?: string;
+    plannedCheckoutDate?: string;
+    actualCheckoutDate?: string;
+    monthlyRate?: number;
+    paidAmount?: number;
+  };
+}
+
 export const StudentForm: React.FC<StudentFormProps> = ({
   open,
   student,
   onClose,
   onSave
 }) => {
-  const [formData, setFormData] = React.useState<Partial<Student>>({
+  const [formData, setFormData] = React.useState<FormState>({
     fullName: '',
     dateOfBirth: '',
     passportNumber: '',
@@ -40,7 +86,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({
     emergencyContactPhone: '',
     academic: {
       group: '',
-      courseYear: 1,
+      courseYear: undefined,
       major: '',
       language: 'English'
     },
@@ -54,12 +100,12 @@ export const StudentForm: React.FC<StudentFormProps> = ({
       registrationAddressDetails: ''
     },
     tuition: {
-      total: 2800,
-      paid: 0
+      total: undefined,
+      paid: undefined
     },
     registrationFee: {
-      total: 300,
-      paid: 0
+      total: undefined,
+      paid: undefined
     },
     dormitory: {
       status: 'None'
@@ -68,7 +114,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({
 
   React.useEffect(() => {
     if (student) {
-      setFormData(student);
+      setFormData(student as FormState);
     } else {
       setFormData({
         fullName: '',
@@ -82,7 +128,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({
         emergencyContactPhone: '',
         academic: {
           group: '',
-          courseYear: 1,
+          courseYear: undefined,
           major: '',
           language: 'English'
         },
@@ -96,12 +142,12 @@ export const StudentForm: React.FC<StudentFormProps> = ({
           registrationAddressDetails: ''
         },
         tuition: {
-          total: 2800,
-          paid: 0
+          total: undefined,
+          paid: undefined
         },
         registrationFee: {
-          total: 300,
-          paid: 0
+          total: undefined,
+          paid: undefined
         },
         dormitory: {
           status: 'None'
@@ -116,7 +162,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({
       setFormData(prev => ({
         ...prev,
         [parent]: {
-          ...(prev[parent as keyof Student] as any),
+          ...((prev as Record<string, unknown>)[parent] as object),
           [child]: value
         }
       }));
@@ -126,14 +172,60 @@ export const StudentForm: React.FC<StudentFormProps> = ({
   };
 
   const handleSubmit = () => {
-    if (formData.fullName && formData.passportNumber) {
+    if (formData.fullName && formData.passportNumber && formData.jshir && formData.jshir.length === 14) {
       const studentToSave: Student = {
         ...formData,
-        id: student?.id || 'NEW', // Preserve ID when editing, temporary ID for new students
+        id: student?.id || 'NEW',
+        academic: {
+          ...formData.academic,
+          courseYear: formData.academic?.courseYear ?? 1,
+          major: formData.academic?.major ?? '',
+          group: formData.academic?.group ?? '',
+          language: (formData.academic?.language as LanguageOfStudy) ?? 'English',
+        },
+        tuition: {
+          total: formData.tuition?.total ?? 2800,
+          paid: formData.tuition?.paid ?? 0,
+        },
+        registrationFee: {
+          total: formData.registrationFee?.total ?? 300,
+          paid: formData.registrationFee?.paid ?? 0,
+        },
+        dormitory: formData.dormitory ? {
+          ...formData.dormitory,
+          monthlyRate: formData.dormitory.monthlyRate ?? undefined,
+          paidAmount: formData.dormitory.paidAmount ?? undefined,
+        } : { status: 'None' },
       } as Student;
       onSave(studentToSave);
     }
   };
+
+  const handleJshirChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value.replace(/\D/g, '').slice(0, 14);
+    handleChange('jshir', v);
+  };
+
+  const handleNumberChange = (field: string, raw: string) => {
+    if (raw === '' || raw === '-') {
+      if (field.includes('.')) {
+        const [parent, child] = field.split('.');
+        setFormData(prev => ({
+          ...prev,
+          [parent]: { ...((prev as Record<string, unknown>)[parent] as object), [child]: undefined }
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, [field]: undefined }));
+      }
+      return;
+    }
+    const num = parseFloat(raw);
+    if (!isNaN(num)) handleChange(field, num);
+  };
+
+  const getNumVal = (val: number | undefined): string =>
+    val !== undefined && val !== null ? String(val) : '';
+
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -183,18 +275,30 @@ export const StudentForm: React.FC<StudentFormProps> = ({
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label="JSHIR"
+                label="JSHSHIR"
                 value={formData.jshir || ''}
-                onChange={(e) => handleChange('jshir', e.target.value)}
+                onChange={handleJshirChange}
+                inputProps={{ maxLength: 14, inputMode: 'numeric', pattern: '[0-9]*' }}
+                helperText="14 ta raqam kiritilishi shart"
+                required
+                error={!!(formData.jshir && formData.jshir.length !== 14)}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
+              <Autocomplete
+                options={COUNTRIES}
+                value={formData.citizenship || null}
+                onChange={(_, newValue) => handleChange('citizenship', newValue || '')}
+                onInputChange={(_, inputValue) => handleChange('citizenship', inputValue)}
+                freeSolo
                 fullWidth
-                label="Fuqarolik"
-                value={formData.citizenship || ''}
-                onChange={(e) => handleChange('citizenship', e.target.value)}
-                required
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Fuqarolik"
+                    required
+                  />
+                )}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -210,6 +314,8 @@ export const StudentForm: React.FC<StudentFormProps> = ({
                 fullWidth
                 label="Email"
                 type="email"
+                inputMode="email"
+                autoComplete="email"
                 value={formData.email || ''}
                 onChange={(e) => handleChange('email', e.target.value)}
               />
@@ -247,20 +353,28 @@ export const StudentForm: React.FC<StudentFormProps> = ({
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
+                select
                 label="Kurs"
-                type="number"
-                value={formData.academic?.courseYear || 1}
-                onChange={(e) => handleChange('academic.courseYear', parseInt(e.target.value))}
-                inputProps={{ min: 1, max: 6 }}
-              />
+                value={formData.academic?.courseYear ?? 1}
+                onChange={(e) => handleChange('academic.courseYear', Number(e.target.value))}
+              >
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <MenuItem key={n} value={n}>{n}-kurs</MenuItem>
+                ))}
+              </TextField>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
+                select
                 label="Yo'nalish"
                 value={formData.academic?.major || ''}
                 onChange={(e) => handleChange('academic.major', e.target.value)}
-              />
+              >
+                {MAJORS.map((m) => (
+                  <MenuItem key={m} value={m}>{m}</MenuItem>
+                ))}
+              </TextField>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
@@ -327,7 +441,13 @@ export const StudentForm: React.FC<StudentFormProps> = ({
                 select
                 label="Ro'yxatdan o'tish manzili turi"
                 value={formData.visa?.registrationAddressType || 'Dormitory'}
-                onChange={(e) => handleChange('visa.registrationAddressType', e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleChange('visa.registrationAddressType', val);
+                  if (val === 'Other') {
+                    handleChange('dormitory.status', 'None');
+                  }
+                }}
               >
                 <MenuItem value="Dormitory">Yotoqxona</MenuItem>
                 <MenuItem value="Other">Boshqa</MenuItem>
@@ -352,8 +472,9 @@ export const StudentForm: React.FC<StudentFormProps> = ({
                 fullWidth
                 label="Kontrakt umumiy summa ($)"
                 type="number"
-                value={formData.tuition?.total || 2800}
-                onChange={(e) => handleChange('tuition.total', parseFloat(e.target.value))}
+                inputProps={{ min: 0, step: 0.01 }}
+                value={getNumVal(formData.tuition?.total)}
+                onChange={(e) => handleNumberChange('tuition.total', e.target.value)}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -361,90 +482,107 @@ export const StudentForm: React.FC<StudentFormProps> = ({
                 fullWidth
                 label="Kontrakt to'langan summa ($)"
                 type="number"
-                value={formData.tuition?.paid || 0}
-                onChange={(e) => handleChange('tuition.paid', parseFloat(e.target.value))}
+                inputProps={{ min: 0, step: 0.01 }}
+                value={getNumVal(formData.tuition?.paid)}
+                onChange={(e) => handleNumberChange('tuition.paid', e.target.value)}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label="Ro'yxatdan o'tish umumiy summa ($)"
+                label="Registratsiya to'lovi – umumiy summa ($)"
                 type="number"
-                value={formData.registrationFee?.total || 300}
-                onChange={(e) => handleChange('registrationFee.total', parseFloat(e.target.value))}
+                inputProps={{ min: 0, step: 0.01 }}
+                value={getNumVal(formData.registrationFee?.total)}
+                onChange={(e) => handleNumberChange('registrationFee.total', e.target.value)}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label="Ro'yxatdan o'tish to'langan summa ($)"
+                label="Registratsiya to'lovi – to'langan summa ($)"
                 type="number"
-                value={formData.registrationFee?.paid || 0}
-                onChange={(e) => handleChange('registrationFee.paid', parseFloat(e.target.value))}
+                inputProps={{ min: 0, step: 0.01 }}
+                value={getNumVal(formData.registrationFee?.paid)}
+                onChange={(e) => handleNumberChange('registrationFee.paid', e.target.value)}
               />
             </Grid>
           </Grid>
 
-          <Typography variant="subtitle2" gutterBottom sx={{ mt: 3, mb: 2 }}>
-            Yotoqxona
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                select
-                label="Yotoqxona holati"
-                value={formData.dormitory?.status || 'None'}
-                onChange={(e) => handleChange('dormitory.status', e.target.value as DormitoryStatus)}
-              >
-                <MenuItem value="None">Yo'q</MenuItem>
-                <MenuItem value="Normal">Oddiy</MenuItem>
-                <MenuItem value="VIP">VIP</MenuItem>
-              </TextField>
-            </Grid>
-            {formData.dormitory?.status !== 'None' && (
-              <>
+          {formData.visa?.registrationAddressType === 'Dormitory' && (
+            <>
+              <Typography variant="subtitle2" gutterBottom sx={{ mt: 3, mb: 2 }}>
+                Yotoqxona
+              </Typography>
+              <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
-                    label="Kirish sanasi"
-                    type="date"
-                    value={formData.dormitory?.checkInDate || ''}
-                    onChange={(e) => handleChange('dormitory.checkInDate', e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                  />
+                    select
+                    label="Yotoqxona holati"
+                    value={formData.dormitory?.status || 'None'}
+                    onChange={(e) => handleChange('dormitory.status', e.target.value as DormitoryStatus)}
+                  >
+                    <MenuItem value="None">Yo'q</MenuItem>
+                    <MenuItem value="Normal">Oddiy</MenuItem>
+                    <MenuItem value="VIP">VIP</MenuItem>
+                  </TextField>
                 </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label="Rejalashtirilgan chiqish sanasi"
-                    type="date"
-                    value={formData.dormitory?.plannedCheckoutDate || ''}
-                    onChange={(e) => handleChange('dormitory.plannedCheckoutDate', e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label="Oylik narx ($)"
-                    type="number"
-                    value={formData.dormitory?.monthlyRate || ''}
-                    onChange={(e) => handleChange('dormitory.monthlyRate', parseFloat(e.target.value))}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label="To'langan summa ($)"
-                    type="number"
-                    value={formData.dormitory?.paidAmount || ''}
-                    onChange={(e) => handleChange('dormitory.paidAmount', parseFloat(e.target.value))}
-                  />
-                </Grid>
-              </>
-            )}
-          </Grid>
+                {formData.dormitory?.status !== 'None' && (
+                  <>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        label="Kirish sanasi"
+                        type="date"
+                        value={formData.dormitory?.checkInDate || ''}
+                        onChange={(e) => handleChange('dormitory.checkInDate', e.target.value)}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        label="Rejalashtirilgan chiqish sanasi"
+                        type="date"
+                        value={formData.dormitory?.plannedCheckoutDate || ''}
+                        onChange={(e) => handleChange('dormitory.plannedCheckoutDate', e.target.value)}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        label="Oylik narx ($)"
+                        type="number"
+                        inputProps={{ min: 0, step: 0.01 }}
+                        value={formData.dormitory?.monthlyRate !== undefined && formData.dormitory?.monthlyRate !== null ? formData.dormitory.monthlyRate : ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === '') handleChange('dormitory.monthlyRate', undefined as any);
+                          else { const n = parseFloat(v); if (!isNaN(n)) handleChange('dormitory.monthlyRate', n); }
+                        }}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        label="To'langan summa ($)"
+                        type="number"
+                        inputProps={{ min: 0, step: 0.01 }}
+                        value={formData.dormitory?.paidAmount !== undefined && formData.dormitory?.paidAmount !== null ? formData.dormitory.paidAmount : ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === '') handleChange('dormitory.paidAmount', undefined as any);
+                          else { const n = parseFloat(v); if (!isNaN(n)) handleChange('dormitory.paidAmount', n); }
+                        }}
+                      />
+                    </Grid>
+                  </>
+                )}
+              </Grid>
+            </>
+          )}
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
@@ -452,7 +590,13 @@ export const StudentForm: React.FC<StudentFormProps> = ({
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={!formData.fullName || !formData.passportNumber}
+          disabled={
+            !formData.fullName ||
+            !formData.passportNumber ||
+            !formData.jshir ||
+            formData.jshir.length !== 14 ||
+            !formData.citizenship
+          }
         >
           Saqlash
         </Button>

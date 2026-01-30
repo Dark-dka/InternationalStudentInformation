@@ -6,6 +6,7 @@ export function calculateRemaining(payment: PaymentBreakdown): number {
 }
 
 export function calculateRegistrationDaysLeft(student: Student): number {
+  if (!student?.visa?.registrationEndDate) return 999;
   const end = dayjs(student.visa.registrationEndDate);
   const diff = end.diff(dayjs(), 'day');
   return diff;

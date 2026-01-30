@@ -192,6 +192,7 @@ const AppContent: React.FC<{
             onSearchChange={setSearch}
             sidebarWidth={sidebarWidth}
             onLogout={onLogout}
+            students={students}
           />
           <Toolbar />
           <Container maxWidth="xl" sx={{ py: 3 }}>

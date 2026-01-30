@@ -26,13 +26,15 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ students }) => {
   const studentsArray = Array.isArray(students) ? students : [];
   
   const registrationExpiring = studentsArray.filter(
-    s => calculateRegistrationDaysLeft(s) <= 10
+    (s) => s.visa?.registrationEndDate && calculateRegistrationDaysLeft(s) <= 10
   );
 
-  const sortedByRegistration = [...studentsArray].sort(
-    (a, b) =>
-      calculateRegistrationDaysLeft(a) - calculateRegistrationDaysLeft(b)
-  );
+  const sortedByRegistration = [...studentsArray]
+    .filter((s) => s.visa?.registrationEndDate)
+    .sort(
+      (a, b) =>
+        calculateRegistrationDaysLeft(a) - calculateRegistrationDaysLeft(b)
+    );
 
   const debtors = studentsArray.filter(s => {
     const tuitionRemaining = calculateRemaining(s.tuition);
@@ -75,7 +77,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ students }) => {
                 <ListItem key={s.id} sx={{ px: 0 }}>
                   <ListItemText
                     primary={s.fullName}
-                    secondary={`${s.academic.group} • ${s.citizenship}`}
+                    secondary={`${s.academic?.group ?? '-'} • ${s.citizenship}`}
                   />
                   <Chip
                     size="small"
@@ -113,7 +115,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ students }) => {
               <ListItem key={s.id} sx={{ px: 0 }}>
                 <ListItemText
                   primary={s.fullName}
-                  secondary={`${s.academic.group} • ${s.academic.major}`}
+                  secondary={`${s.academic?.group ?? '-'} • ${s.academic?.major ?? '-'}`}
                 />
                 <Chip
                   size="small"
@@ -193,7 +195,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ students }) => {
                           {s.fullName}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {s.academic.group} • {s.citizenship}
+                          {s.academic?.group ?? '-'} • {s.citizenship}
                         </Typography>
                       </Box>
                     </Box>

@@ -175,10 +175,12 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 Toʻlovlar
               </Typography>
               <Typography variant="body2">
-                <strong>Yillik kontrakt summasi:</strong> $2800
+                <strong>Yillik kontrakt summasi:</strong> $
+                {student.tuition.total.toLocaleString()}
               </Typography>
               <Typography variant="body2">
-                <strong>Toʻlangan:</strong> ${student.tuition.paid.toLocaleString()}
+                <strong>Toʻlangan:</strong> $
+                {student.tuition.paid.toLocaleString()}
               </Typography>
               <Typography variant="body2">
                 <strong>Qoldiq:</strong>{' '}
@@ -198,7 +200,8 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               </Typography>
               <Divider sx={{ my: 1.5 }} />
               <Typography variant="body2">
-                <strong>Roʻyxatdan oʻtish toʻlovi:</strong> $300
+                <strong>Registratsiya toʻlovi (umumiy):</strong> $
+                {student.registrationFee.total.toLocaleString()}
               </Typography>
               <Typography variant="body2">
                 <strong>Toʻlangan:</strong> $
